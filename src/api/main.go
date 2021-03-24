@@ -40,7 +40,7 @@ func main() {
 	tEnd, _ := time.Parse(layoutISO, endDate)
 
 	fmt.Printf("UUIDv4: %s\n", u2)
-	class := &data.Class{Name: "najam awan", ID: u2, Capacity: 20, StartDate: tStart, EndDate: tEnd}
+	class := &data.Class{Name: "najam awan", ID: u2, Capacity: 20, StartDate: tStart.String(), EndDate: tEnd.String()}
 
 	fmt.Printf("class = %+v \n", class)
 	//http work
@@ -53,10 +53,12 @@ func main() {
 	l := log.New(os.Stdout, "api", log.LstdFlags)
 	hh := handlers.NewHello(l)
 	bh := handlers.NewGoodbye(l)
+	ch := handlers.NewClasses(l)
 
 	sm := http.NewServeMux()
 	sm.Handle("/hello", hh)
 	sm.Handle("/bye", bh)
+	sm.Handle("/classes", ch)
 
 	//http server launching with graceful shutdown support
 	s := &http.Server{
