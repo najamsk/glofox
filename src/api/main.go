@@ -9,7 +9,7 @@ import (
 	"os/signal"
 	"time"
 
-	models "github.com/najamsk/glofox/src/api/data"
+	"github.com/najamsk/glofox/src/api/data"
 	"github.com/najamsk/glofox/src/api/handlers"
 	uuid "github.com/satori/go.uuid"
 )
@@ -40,7 +40,7 @@ func main() {
 	tEnd, _ := time.Parse(layoutISO, endDate)
 
 	fmt.Printf("UUIDv4: %s\n", u2)
-	class := &models.Class{Name: "najam awan", ID: u2, Capacity: 20, StartDate: tStart, EndDate: tEnd}
+	class := &data.Class{Name: "najam awan", ID: u2, Capacity: 20, StartDate: tStart, EndDate: tEnd}
 
 	fmt.Printf("class = %+v \n", class)
 	//http work
