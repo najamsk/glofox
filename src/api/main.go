@@ -9,8 +9,8 @@ import (
 	"os/signal"
 	"time"
 
+	models "github.com/najamsk/glofox/src/api/data"
 	"github.com/najamsk/glofox/src/api/handlers"
-	"github.com/najamsk/glofox/src/api/models"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -45,16 +45,18 @@ func main() {
 	fmt.Printf("class = %+v \n", class)
 	//http work
 
-	http.HandleFunc("/bye", func(http.ResponseWriter, *http.Request) {
+	http.HandleFunc("/xbye", func(http.ResponseWriter, *http.Request) {
 		fmt.Println("bye endpoint has been called")
 	})
 
 	//handlers in there own package with structs
 	l := log.New(os.Stdout, "api", log.LstdFlags)
 	hh := handlers.NewHello(l)
+	bh := handlers.NewGoodbye(l)
 
 	sm := http.NewServeMux()
-	sm.Handle("/", hh)
+	sm.Handle("/hello", hh)
+	sm.Handle("/bye", bh)
 
 	//http server launching with graceful shutdown support
 	s := &http.Server{
