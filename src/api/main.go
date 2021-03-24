@@ -1,11 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"time"
 
 	"github.com/najamsk/glofox/src/api/handlers"
@@ -41,25 +42,8 @@ func main() {
 	fmt.Printf("UUIDv4: %s\n", u2)
 	class := &models.Class{Name: "najam awan", ID: u2, Capacity: 20, StartDate: tStart, EndDate: tEnd}
 
+	fmt.Printf("class = %+v \n", class)
 	//http work
-	http.HandleFunc("/xhello", func(rw http.ResponseWriter, r *http.Request) {
-		d, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			fmt.Printf("err reading body %v", err.Error())
-			//set error long menthod
-			// rw.WriteHeader(http.StatusBadRequest)
-			// rw.Write([]byte("oops"))
-			// return
-			//or shortcut method
-			http.Error(rw, "oops", http.StatusBadRequest)
-		}
-
-		return
-		log.Printf("request body is %s \n", d)
-		fmt.Fprintf(rw, "body was  %s", d)
-
-		fmt.Println("hello endpoint has been called")
-	})
 
 	http.HandleFunc("/bye", func(http.ResponseWriter, *http.Request) {
 		fmt.Println("bye endpoint has been called")
@@ -72,8 +56,33 @@ func main() {
 	sm := http.NewServeMux()
 	sm.Handle("/", hh)
 
-	//listening to addres and supplying a handler mux
-	http.ListenAndServe(":9090", sm)
+	//http server launching with graceful shutdown support
+	s := &http.Server{
+		Addr:    ":9090",
+		Handler: sm,
+	}
 
-	fmt.Printf("class = %+v \n", class)
+	//use go go routine
+	go func() {
+		//since s.listenandserve will block we wrap it inside goroutine
+		err := s.ListenAndServe()
+		if err != nil {
+			l.Fatal(err)
+		}
+	}()
+
+	killChan := make(chan os.Signal)
+	signal.Notify(killChan, os.Interrupt)
+	signal.Notify(killChan, os.Kill)
+
+	// reading from channel will block and will be unbloced if any kill interrrupt will be received
+	sig := <-killChan
+	l.Println("signal to shutdown, will be doing graceful shutdown", sig)
+
+	// cleanup resources like database connections etc
+	l.Println("cleaning up resources")
+
+	//timeout context requrire for server.shutdown
+	tc, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	s.Shutdown(tc)
 }
