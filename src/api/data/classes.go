@@ -2,6 +2,7 @@ package data
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"time"
 
@@ -26,6 +27,8 @@ type Class struct {
 
 type Classes []*Class
 
+var ErrClassNotFound = fmt.Errorf("Class not found")
+
 func (c *Class) FromJSON(r io.Reader) error {
 	e := json.NewDecoder(r)
 	return e.Decode(c)
@@ -39,6 +42,25 @@ func (c *Classes) ToJSON(w io.Writer) error {
 func AddClass(c *Class) {
 	c.ID = uuid.NewV4()
 	classList = append(classList, c)
+}
+
+func UpdateClass(id uuid.UUID, c *Class) error {
+	_, pos, err := findClass(id)
+
+	if err != nil {
+		return err
+	}
+	c.ID = id
+	classList[pos] = c
+	return nil
+}
+func findClass(id uuid.UUID) (*Class, int, error) {
+	for k, v := range classList {
+		if v.ID == id {
+			return v, k, nil
+		}
+	}
+	return nil, -1, ErrClassNotFound
 }
 
 func GetClases() Classes {
