@@ -1,12 +1,13 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 
+	"github.com/gorilla/mux"
 	"github.com/najamsk/glofox/src/api/data"
 	uuid "github.com/satori/go.uuid"
 )
@@ -15,59 +16,33 @@ type Classes struct {
 	l *log.Logger
 }
 
+//Keyvalue to set contextwithvalue
+type KeyClass struct{}
+
 func NewClasses(l *log.Logger) *Classes {
 	return &Classes{l}
 }
 
-func (c *Classes) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-	fmt.Println("classes request method is = ", r.Method)
-	if r.Method == http.MethodGet {
-		c.getClasses(rw, r)
-		return
-	}
-
-	if r.Method == http.MethodPost {
-		c.addClass(rw, r)
-		return
-	}
-
-	if r.Method == http.MethodPut {
-		c.l.Println("about to process put request")
-		c.l.Println("PUT", r.URL.Path)
-
-		rp := strings.ReplaceAll(r.URL.Path, "/", "")
-
-		c.l.Println("rp = ", rp)
-		// expect the id in the URI
-		// reg := regexp.MustCompile(`/^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$`)
-
-		//parse string into uuid
-		// Parsing UUID from string input
-		u2, err := uuid.FromString(rp)
-		if err != nil {
-			http.Error(rw, "Invalid id", http.StatusBadRequest)
-			return
-		}
-		fmt.Printf("Successfully parsed: %s \n", u2)
-
-		c.updateClass(u2, rw, r)
-		return
-	}
-	//catch all
-	rw.WriteHeader(http.StatusMethodNotAllowed)
-}
-func (c *Classes) updateClass(id uuid.UUID, rw http.ResponseWriter, r *http.Request) {
+func (c *Classes) UpdateClass(rw http.ResponseWriter, r *http.Request) {
 	c.l.Println("handle PUT Class")
-	class := &data.Class{}
 
-	err := class.FromJSON(r.Body)
+	vars := mux.Vars(r)
+	id := vars["id"]
+	// Parsing UUID from string input
+	u2, err := uuid.FromString(id)
 	if err != nil {
-		c.l.Println("cant parse json coming as request body")
-		http.Error(rw, "unable to unmarshal json", http.StatusBadRequest)
+		c.l.Println("cant parse id of class")
+		http.Error(rw, "class id is not valid please provide valid uuid", http.StatusBadRequest)
 		return
 	}
+	fmt.Printf("Successfully parsed: %s", u2)
+
+	//get class from request contxt since middle ware set it
+	class := r.Context().Value(KeyClass{}).(data.Class)
+
 	c.l.Println("call data.updateClass")
-	err = data.UpdateClass(id, class)
+	err = data.UpdateClass(u2, &class)
+
 	if err == data.ErrClassNotFound {
 		c.l.Println("class to update not found")
 		http.Error(rw, "class not found", http.StatusNotFound)
@@ -81,20 +56,22 @@ func (c *Classes) updateClass(id uuid.UUID, rw http.ResponseWriter, r *http.Requ
 
 }
 
-func (c *Classes) addClass(rw http.ResponseWriter, r *http.Request) {
+func (c *Classes) AddClass(rw http.ResponseWriter, r *http.Request) {
 	c.l.Println("handle POST Class")
 
-	class := &data.Class{}
-	err := class.FromJSON(r.Body)
+	// class := &data.Class{}
+	// err := class.FromJSON(r.Body)
 
-	if err != nil {
-		http.Error(rw, "post request body is not valid", http.StatusBadRequest)
-		return
-	}
+	// if err != nil {
+	// 	http.Error(rw, "post request body is not valid", http.StatusBadRequest)
+	// 	return
+	// }
 
-	c.l.Println("Class to add : %#v", class)
+	// c.l.Println("Class to add : %#v", class)
 
-	data.AddClass(class)
+	class := r.Context().Value(KeyClass{}).(data.Class)
+
+	data.AddClass(&class)
 
 	//marshal json
 	j, err := json.Marshal(class)
@@ -109,7 +86,7 @@ func (c *Classes) addClass(rw http.ResponseWriter, r *http.Request) {
 
 }
 
-func (c *Classes) getClasses(rw http.ResponseWriter, r *http.Request) {
+func (c *Classes) GetClasses(rw http.ResponseWriter, r *http.Request) {
 	c.l.Println("handle GET Classes")
 	lp := data.GetClases()
 
@@ -119,4 +96,24 @@ func (c *Classes) getClasses(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, "unable to send data in json format", http.StatusInternalServerError)
 		return
 	}
+}
+
+func (c Classes) MiddlewareClassValidation(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		class := data.Class{}
+
+		err := class.FromJSON(r.Body)
+		if err != nil {
+			c.l.Println("[Error] deserializing class from request", err.Error())
+			http.Error(rw, "Error reading class", http.StatusBadRequest)
+			return
+		}
+
+		//add the class to the context
+		ctx := context.WithValue(r.Context(), KeyClass{}, class)
+		r = r.WithContext(ctx)
+
+		next.ServeHTTP(rw, r)
+	})
+
 }

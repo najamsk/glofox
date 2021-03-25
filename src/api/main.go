@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/najamsk/glofox/src/api/data"
 	"github.com/najamsk/glofox/src/api/handlers"
 	uuid "github.com/satori/go.uuid"
@@ -51,14 +52,25 @@ func main() {
 
 	//handlers in there own package with structs
 	l := log.New(os.Stdout, "api", log.LstdFlags)
-	hh := handlers.NewHello(l)
-	bh := handlers.NewGoodbye(l)
+	// hh := handlers.NewHello(l)
+	// bh := handlers.NewGoodbye(l)
 	ch := handlers.NewClasses(l)
 
-	sm := http.NewServeMux()
-	sm.Handle("/hello", hh)
-	sm.Handle("/bye", bh)
-	sm.Handle("/", ch)
+	sm := mux.NewRouter()
+	getRouter := sm.Methods(http.MethodGet).Subrouter()
+	getRouter.HandleFunc("/", ch.GetClasses)
+
+	postRouter := sm.Methods(http.MethodPost).Subrouter()
+	postRouter.HandleFunc("/", ch.AddClass)
+	postRouter.Use(ch.MiddlewareClassValidation)
+
+	putRouter := sm.Methods(http.MethodPut).Subrouter()
+	putRouter.HandleFunc("/{id}", ch.UpdateClass)
+	putRouter.Use(ch.MiddlewareClassValidation)
+
+	// sm.Handle("/hello", hh)
+	// sm.Handle("/bye", bh)
+	// sm.Handle("/", ch)
 
 	//http server launching with graceful shutdown support
 	s := &http.Server{
