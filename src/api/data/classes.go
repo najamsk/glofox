@@ -15,9 +15,6 @@ const (
 	layoutUS  = "January 2, 2006"
 )
 
-// startDate := "2021-02-14"
-// tStart, _ := time.Parse(layoutISO, startDate)
-// endDate := "2021-02-22"
 type Class struct {
 	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name" validate:"required"`
@@ -124,3 +121,7 @@ var classList = []*Class{
 // startdate should not be bigger then enddate
 
 // you have one class in a single day so while registering a class it should not clash with any other class
+
+// startDate := "2021-02-14"
+// tStart, _ := time.Parse(layoutISO, startDate)
+// endDate := "2021-02-22"

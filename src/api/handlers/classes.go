@@ -1,3 +1,18 @@
+// Package classification of Class API
+//
+// Documentation for Class API
+//
+//	Schemes: http
+//	BasePath: /
+//	Version: 1.0.0
+//
+//	Consumes:
+//	- application/json
+//
+//	Produces:
+//	- application/json
+//
+// swagger:meta
 package handlers
 
 import (
@@ -11,6 +26,14 @@ import (
 	"github.com/najamsk/glofox/src/api/data"
 	uuid "github.com/satori/go.uuid"
 )
+
+// A list of classes returns int the response
+// swagger:response classesResponse
+type classesResponse struct {
+	// All classes in the store
+	// in: body
+	Body []data.Class
+}
 
 type Classes struct {
 	l *log.Logger
@@ -71,6 +94,12 @@ func (c *Classes) AddClass(rw http.ResponseWriter, r *http.Request) {
 	rw.Write(j)
 }
 
+// swagger:route GET / classes listClasses
+// Return a list of classes from the data store
+// responses:
+//	200: classesResponse
+
+// GetClasses returns the classes list from the data store
 func (c *Classes) GetClasses(rw http.ResponseWriter, r *http.Request) {
 	c.l.Println("handle GET Classes")
 	lp := data.GetClases()

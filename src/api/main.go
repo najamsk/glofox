@@ -9,11 +9,14 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/go-openapi/runtime/middleware"
 	"github.com/gorilla/mux"
 	"github.com/najamsk/glofox/src/api/data"
 	"github.com/najamsk/glofox/src/api/handlers"
 	uuid "github.com/satori/go.uuid"
 )
+
+// var bindAddress = env.String("BIND_ADDRESS", false, ":9090", "Bind address for the server")
 
 func debug() {
 	const (
@@ -64,6 +67,12 @@ func main() {
 	putRouter := sm.Methods(http.MethodPut).Subrouter()
 	putRouter.HandleFunc("/{id}", ch.UpdateClass)
 	putRouter.Use(ch.MiddlewareClassValidation)
+
+	opts := middleware.RedocOpts{SpecURL: "/swagger.yaml"}
+	sh := middleware.Redoc(opts, nil)
+
+	getRouter.Handle("/docs", sh)
+	getRouter.Handle("/swagger.yaml", http.FileServer(http.Dir("./")))
 
 	//http server launching with graceful shutdown support
 	s := &http.Server{

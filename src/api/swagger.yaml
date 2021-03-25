@@ -1,0 +1,58 @@
+basePath: /
+consumes:
+- application/json
+definitions:
+  Class:
+    properties:
+      capacity:
+        format: int64
+        type: integer
+        x-go-name: Capacity
+      endDate:
+        type: string
+        x-go-name: EndDate
+      id:
+        $ref: '#/definitions/UUID'
+      name:
+        type: string
+        x-go-name: Name
+      startDate:
+        type: string
+        x-go-name: StartDate
+    type: object
+    x-go-package: github.com/najamsk/glofox/src/api/data
+  UUID:
+    description: |-
+      UUID representation compliant with specification
+      described in RFC 4122.
+    items:
+      format: uint8
+      type: integer
+    type: array
+    x-go-package: github.com/satori/go.uuid
+info:
+  description: Documentation for Class API
+  title: of Class API
+  version: 1.0.0
+paths:
+  /:
+    get:
+      description: Return a list of classes from the data store
+      operationId: listClasses
+      responses:
+        "200":
+          $ref: '#/responses/classesResponse'
+      tags:
+      - classes
+produces:
+- application/json
+responses:
+  classesResponse:
+    description: A list of classes returns int the response
+    schema:
+      items:
+        $ref: '#/definitions/Class'
+      type: array
+schemes:
+- http
+swagger: "2.0"
