@@ -58,7 +58,7 @@ func main() {
 	sm := http.NewServeMux()
 	sm.Handle("/hello", hh)
 	sm.Handle("/bye", bh)
-	sm.Handle("/classes", ch)
+	sm.Handle("/", ch)
 
 	//http server launching with graceful shutdown support
 	s := &http.Server{
