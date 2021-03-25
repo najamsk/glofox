@@ -58,19 +58,7 @@ func (c *Classes) UpdateClass(rw http.ResponseWriter, r *http.Request) {
 
 func (c *Classes) AddClass(rw http.ResponseWriter, r *http.Request) {
 	c.l.Println("handle POST Class")
-
-	// class := &data.Class{}
-	// err := class.FromJSON(r.Body)
-
-	// if err != nil {
-	// 	http.Error(rw, "post request body is not valid", http.StatusBadRequest)
-	// 	return
-	// }
-
-	// c.l.Println("Class to add : %#v", class)
-
 	class := r.Context().Value(KeyClass{}).(data.Class)
-
 	data.AddClass(&class)
 
 	//marshal json
@@ -81,9 +69,6 @@ func (c *Classes) AddClass(rw http.ResponseWriter, r *http.Request) {
 
 	}
 	rw.Write(j)
-
-	// fmt.Fprintf(rw, "post request data was=   %v", d)
-
 }
 
 func (c *Classes) GetClasses(rw http.ResponseWriter, r *http.Request) {

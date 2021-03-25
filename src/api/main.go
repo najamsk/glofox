@@ -15,8 +15,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-func main() {
-
+func debug() {
 	const (
 		layoutISO = "2006-01-02"
 		layoutUS  = "January 2, 2006"
@@ -46,11 +45,9 @@ func main() {
 	fmt.Printf("class = %+v \n", class)
 	//http work
 
-	http.HandleFunc("/xbye", func(http.ResponseWriter, *http.Request) {
-		fmt.Println("bye endpoint has been called")
-	})
+}
+func main() {
 
-	//handlers in there own package with structs
 	l := log.New(os.Stdout, "api", log.LstdFlags)
 	// hh := handlers.NewHello(l)
 	// bh := handlers.NewGoodbye(l)
@@ -68,10 +65,6 @@ func main() {
 	putRouter.HandleFunc("/{id}", ch.UpdateClass)
 	putRouter.Use(ch.MiddlewareClassValidation)
 
-	// sm.Handle("/hello", hh)
-	// sm.Handle("/bye", bh)
-	// sm.Handle("/", ch)
-
 	//http server launching with graceful shutdown support
 	s := &http.Server{
 		Addr:    ":9090",
@@ -81,6 +74,7 @@ func main() {
 	//use go go routine
 	go func() {
 		//since s.listenandserve will block we wrap it inside goroutine
+		l.Println("starting server  :9090")
 		err := s.ListenAndServe()
 		if err != nil {
 			l.Fatal(err)
