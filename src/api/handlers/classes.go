@@ -97,7 +97,7 @@ func (c Classes) MiddlewareClassValidation(next http.Handler) http.Handler {
 		err = class.Validate()
 		if err != nil {
 			c.l.Println("class validation fails with ", err.Error())
-			http.Error(rw, "Error validating class", http.StatusBadRequest)
+			http.Error(rw, fmt.Sprintf("Error validating class %s", err), http.StatusBadRequest)
 			return
 		}
 
