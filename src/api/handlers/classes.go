@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"regexp"
+	"strings"
 
 	"github.com/najamsk/glofox/src/api/data"
 	uuid "github.com/satori/go.uuid"
@@ -34,37 +34,23 @@ func (c *Classes) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPut {
 		c.l.Println("about to process put request")
 		c.l.Println("PUT", r.URL.Path)
+
+		rp := strings.ReplaceAll(r.URL.Path, "/", "")
+
+		c.l.Println("rp = ", rp)
 		// expect the id in the URI
 		// reg := regexp.MustCompile(`/^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$`)
-		reg := regexp.MustCompile(`/([0-9]+)`)
-		g := reg.FindAllStringSubmatch(r.URL.Path, -1)
-		c.l.Println("g is =", g)
-
-		if len(g) != 1 {
-			c.l.Println("Invalid URI atlest one id should be supplied")
-			http.Error(rw, "Invalid URI", http.StatusBadRequest)
-			return
-		}
-
-		if len(g[0]) != 2 {
-			c.l.Println("Invalid URI more than one capture group")
-			http.Error(rw, "Invalid URI", http.StatusBadRequest)
-			return
-		}
-
-		idString := g[0][1]
-		c.l.Println("idstring = ", idString)
 
 		//parse string into uuid
 		// Parsing UUID from string input
-		// u2, err := uuid.FromString(idString)
-		// if err != nil {
-		// 	http.Error(rw, "Invalid id", http.StatusBadRequest)
-		// 	return
-		// }
-		// fmt.Printf("Successfully parsed: %s", u2)
+		u2, err := uuid.FromString(rp)
+		if err != nil {
+			http.Error(rw, "Invalid id", http.StatusBadRequest)
+			return
+		}
+		fmt.Printf("Successfully parsed: %s \n", u2)
 
-		c.updateClass(uuid.NewV4(), rw, r)
+		c.updateClass(u2, rw, r)
 		return
 	}
 	//catch all
@@ -76,15 +62,19 @@ func (c *Classes) updateClass(id uuid.UUID, rw http.ResponseWriter, r *http.Requ
 
 	err := class.FromJSON(r.Body)
 	if err != nil {
+		c.l.Println("cant parse json coming as request body")
 		http.Error(rw, "unable to unmarshal json", http.StatusBadRequest)
 		return
 	}
+	c.l.Println("call data.updateClass")
 	err = data.UpdateClass(id, class)
 	if err == data.ErrClassNotFound {
+		c.l.Println("class to update not found")
 		http.Error(rw, "class not found", http.StatusNotFound)
 		return
 	}
-	if err == nil {
+	if err != nil {
+		c.l.Println("some error on server =", err.Error())
 		http.Error(rw, "class not found", http.StatusInternalServerError)
 		return
 	}

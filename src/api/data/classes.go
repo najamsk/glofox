@@ -56,7 +56,8 @@ func UpdateClass(id uuid.UUID, c *Class) error {
 }
 func findClass(id uuid.UUID) (*Class, int, error) {
 	for k, v := range classList {
-		if v.ID == id {
+
+		if uuid.Equal(v.ID, id) {
 			return v, k, nil
 		}
 	}
