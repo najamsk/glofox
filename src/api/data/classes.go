@@ -6,6 +6,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -19,15 +20,47 @@ const (
 // endDate := "2021-02-22"
 type Class struct {
 	ID        uuid.UUID `json:"id"`
-	Name      string    `json:"name"`
-	StartDate string    `json:"startDate"`
-	EndDate   string    `json:"endDate"`
+	Name      string    `json:"name" validate:"required"`
+	StartDate string    `json:"startDate" validate:"required,beforeEndDate"`
+	EndDate   string    `json:"endDate" validate:"required"`
 	Capacity  int       `json:"capacity"`
 }
 
 type Classes []*Class
 
 var ErrClassNotFound = fmt.Errorf("Class not found")
+
+func (c Class) validateStartDate(fl validator.FieldLevel) bool {
+
+	sDate := fl.Field().String()
+
+	fmt.Println("SDate =", sDate)
+
+	tStart, err := time.Parse(layoutISO, sDate)
+	if err != nil {
+		fmt.Println("validattion tStart fails = ", tStart)
+		return false
+	}
+	tEnd, err := time.Parse(layoutISO, c.EndDate)
+	if err != nil {
+		fmt.Println("validattion tEnd fails = ", tEnd)
+		return false
+	}
+
+	if tStart.After(tEnd) {
+		return false
+	}
+
+	return true
+
+}
+
+func (c *Class) Validate() error {
+	validate := validator.New()
+
+	validate.RegisterValidation("beforeEndDate", c.validateStartDate)
+	return validate.Struct(c)
+}
 
 func (c *Class) FromJSON(r io.Reader) error {
 	e := json.NewDecoder(r)

@@ -94,6 +94,13 @@ func (c Classes) MiddlewareClassValidation(next http.Handler) http.Handler {
 			return
 		}
 
+		err = class.Validate()
+		if err != nil {
+			c.l.Println("class validation fails with ", err.Error())
+			http.Error(rw, "Error validating class", http.StatusBadRequest)
+			return
+		}
+
 		//add the class to the context
 		ctx := context.WithValue(r.Context(), KeyClass{}, class)
 		r = r.WithContext(ctx)
