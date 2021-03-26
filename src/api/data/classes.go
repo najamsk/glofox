@@ -26,6 +26,8 @@ type Class struct {
 type Classes []*Class
 
 var ErrClassNotFound = fmt.Errorf("Class not found")
+var ErrClassNotCreated = fmt.Errorf("Class not created")
+var ErrClassClashing = fmt.Errorf("Class dates are clashing with other classes")
 
 func (c Class) validateStartDate(fl validator.FieldLevel) bool {
 
@@ -69,13 +71,68 @@ func (c *Classes) ToJSON(w io.Writer) error {
 	return e.Encode(c)
 }
 
-func AddClass(c *Class) {
+func isClashing(ts, te time.Time) bool {
+	clashing := false
+	if len(classList) == 0 {
+		return clashing
+	}
+
+	//loop through
+	for _, v := range classList {
+		//convert first class start and end time
+		vs, err := time.Parse(layoutISO, v.StartDate)
+		if err != nil {
+			continue
+		}
+		ve, err := time.Parse(layoutISO, v.EndDate)
+		if err != nil {
+			continue
+		}
+
+		//if supplied start date is equal vs or its (after vs but before ve)
+		if ts.Equal(vs) || ts.Equal(ve) || (ts.After(vs) && ts.Before(ve)) {
+			clashing = true
+			return clashing
+		}
+		if te.Equal(ve) || te.Equal(vs) || (te.Before(ve) && te.After(vs)) {
+			clashing = true
+			return clashing
+		}
+	}
+	return clashing
+}
+
+func AddClass(c *Class) error {
+	//first convert class dates if they are convertable then
+	//	 check if class start dates is not clashing with any class
+
+	tStart, err := time.Parse(layoutISO, c.StartDate)
+	if err != nil {
+		fmt.Println("validattion tStart fails = ", tStart)
+		return err
+	}
+	tEnd, err := time.Parse(layoutISO, c.EndDate)
+	if err != nil {
+		fmt.Println("validattion tEnd fails = ", tEnd)
+		return err
+	}
+	clashing := isClashing(tStart, tEnd)
+
+	if clashing {
+		return fmt.Errorf("this class dates clashing with other classes")
+	}
+
+	// if tStart.After(tEnd) {
+	// 	return false
+	// }
+
 	c.ID = uuid.NewV4()
 	classList = append(classList, c)
+	return nil
 }
 
 func UpdateClass(id uuid.UUID, c *Class) error {
-	_, pos, err := findClass(id)
+	_, pos, err := FindClass(id)
 
 	if err != nil {
 		return err
@@ -84,7 +141,7 @@ func UpdateClass(id uuid.UUID, c *Class) error {
 	classList[pos] = c
 	return nil
 }
-func findClass(id uuid.UUID) (*Class, int, error) {
+func FindClass(id uuid.UUID) (*Class, int, error) {
 	for k, v := range classList {
 
 		if uuid.Equal(v.ID, id) {

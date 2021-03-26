@@ -82,12 +82,16 @@ func (c *Classes) UpdateClass(rw http.ResponseWriter, r *http.Request) {
 func (c *Classes) AddClass(rw http.ResponseWriter, r *http.Request) {
 	c.l.Println("handle POST Class")
 	class := r.Context().Value(KeyClass{}).(data.Class)
-	data.AddClass(&class)
+	err := data.AddClass(&class)
+	if err != nil {
+		c.l.Printf("eror adding class %s \n", err.Error())
+		http.Error(rw, err.Error(), http.StatusNotAcceptable)
+	}
 
 	//marshal json
 	j, err := json.Marshal(class)
 	if err != nil {
-		http.Error(rw, "unable to send data in json format", http.StatusInternalServerError)
+		http.Error(rw, "unable to send classes in json format", http.StatusInternalServerError)
 		return
 
 	}
@@ -114,6 +118,7 @@ func (c *Classes) GetClasses(rw http.ResponseWriter, r *http.Request) {
 
 func (c Classes) MiddlewareClassValidation(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		c.l.Println("middlewareClassValidatoin kicks in")
 		class := data.Class{}
 
 		err := class.FromJSON(r.Body)

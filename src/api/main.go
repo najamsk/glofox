@@ -55,17 +55,23 @@ func main() {
 	// hh := handlers.NewHello(l)
 	// bh := handlers.NewGoodbye(l)
 	ch := handlers.NewClasses(l)
+	bh := handlers.NewBookings(l)
 
 	sm := mux.NewRouter()
 	getRouter := sm.Methods(http.MethodGet).Subrouter()
-	getRouter.HandleFunc("/", ch.GetClasses)
+	getRouter.HandleFunc("/classes", ch.GetClasses)
+	getRouter.HandleFunc("/bookings", bh.GetBookings)
 
 	postRouter := sm.Methods(http.MethodPost).Subrouter()
-	postRouter.HandleFunc("/", ch.AddClass)
+	postRouter.HandleFunc("/classes", ch.AddClass)
 	postRouter.Use(ch.MiddlewareClassValidation)
 
+	postRouterBooking := sm.Methods(http.MethodPost).Subrouter()
+	postRouterBooking.HandleFunc("/bookings", bh.AddBooking)
+	postRouterBooking.Use(bh.MiddlewareBookingValidation)
+
 	putRouter := sm.Methods(http.MethodPut).Subrouter()
-	putRouter.HandleFunc("/{id}", ch.UpdateClass)
+	putRouter.HandleFunc("/classes/{id}", ch.UpdateClass)
 	putRouter.Use(ch.MiddlewareClassValidation)
 
 	opts := middleware.RedocOpts{SpecURL: "/swagger.yaml"}
