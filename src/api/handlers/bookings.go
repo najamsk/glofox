@@ -58,6 +58,8 @@ func (b *Bookings) AddBooking(rw http.ResponseWriter, r *http.Request) {
 		return
 
 	}
+
+	rw.WriteHeader(http.StatusCreated)
 	rw.Write(j)
 }
 

@@ -96,6 +96,7 @@ func (c *Classes) AddClass(rw http.ResponseWriter, r *http.Request) {
 		return
 
 	}
+	rw.WriteHeader(http.StatusCreated)
 	rw.Write(j)
 }
 
