@@ -86,6 +86,7 @@ func (c *Classes) AddClass(rw http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		c.l.Printf("eror adding class %s \n", err.Error())
 		http.Error(rw, err.Error(), http.StatusNotAcceptable)
+		return
 	}
 
 	//marshal json

@@ -72,32 +72,46 @@ func (c *Classes) ToJSON(w io.Writer) error {
 }
 
 func isClashing(ts, te time.Time) bool {
+	fmt.Println("fn isClashing called")
+	fmt.Printf("start =%v, end=%v \n", ts, te)
+
 	clashing := false
 	if len(classList) == 0 {
 		return clashing
 	}
+	fmt.Println("fn isClashing scan store")
 
 	//loop through
 	for _, v := range classList {
 		//convert first class start and end time
-		vs, err := time.Parse(layoutISO, v.StartDate)
+		vs, err := time.Parse("2006-01-02", v.StartDate)
 		if err != nil {
 			continue
 		}
-		ve, err := time.Parse(layoutISO, v.EndDate)
+		ve, err := time.Parse("2006-01-02", v.EndDate)
 		if err != nil {
 			continue
 		}
 
+		fmt.Printf("vstart =%v, vend=%v \n", vs, ve)
 		//if supplied start date is equal vs or its (after vs but before ve)
-		if ts.Equal(vs) || ts.Equal(ve) || (ts.After(vs) && ts.Before(ve)) {
+		if ts.Equal(vs) || ts.Equal(ve) {
 			clashing = true
 			return clashing
 		}
-		if te.Equal(ve) || te.Equal(vs) || (te.Before(ve) && te.After(vs)) {
+
+		//if our target is inside v(class) dates
+		if (ts.After(vs) && ts.Before(ve)) || (te.Before(ve) && te.After(vs)) {
 			clashing = true
 			return clashing
 		}
+
+		//if our target is inside v(class) dates
+		if (vs.After(ts) && vs.Before(te)) || (ve.Before(te) && ve.After(ts)) {
+			clashing = true
+			return clashing
+		}
+
 	}
 	return clashing
 }
@@ -116,15 +130,12 @@ func AddClass(c *Class) error {
 		fmt.Println("validattion tEnd fails = ", tEnd)
 		return err
 	}
+
 	clashing := isClashing(tStart, tEnd)
 
 	if clashing {
 		return fmt.Errorf("this class dates clashing with other classes")
 	}
-
-	// if tStart.After(tEnd) {
-	// 	return false
-	// }
 
 	c.ID = uuid.NewV4()
 	classList = append(classList, c)
@@ -160,15 +171,15 @@ var classList = []*Class{
 	&Class{
 		ID:        uuid.NewV4(),
 		Name:      "Easy home cooking",
-		StartDate: time.Now().AddDate(0, 0, -30).String(),
-		EndDate:   time.Now().AddDate(0, 0, -15).String(),
+		StartDate: time.Now().AddDate(0, 0, -30).Format("2006-01-02"),
+		EndDate:   time.Now().AddDate(0, 0, -15).Format("2006-01-02"),
 		Capacity:  20,
 	},
 	&Class{
 		ID:        uuid.NewV4(),
 		Name:      "Home workout",
-		StartDate: time.Now().AddDate(0, 0, 1).String(),
-		EndDate:   time.Now().AddDate(0, 0, 14).String(),
+		StartDate: time.Now().AddDate(0, 0, 1).Format("2006-01-02"),
+		EndDate:   time.Now().AddDate(0, 0, 14).Format("2006-01-02"),
 		Capacity:  10,
 	},
 }
